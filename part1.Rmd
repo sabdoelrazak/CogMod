@@ -1,0 +1,85 @@
+---
+title: "GroupProj1"
+author: "Saif"
+date: "13-11-2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#Import libraries
+library(readr)
+library(dplyr)
+```
+
+
+## Question 1 
+#1a
+
+```{r}
+# Load the data
+
+kpData <- read_csv("keyPressDataWithLaneDeviation.csv")
+View(kpData)
+
+# Report Mean, Standard Deviation, and Standard Error of the Mean
+# for dualSteerFocus and dualDialFocus
+dualSteerData <- subset(kpData, partOfExperiment == 'dualSteerFocus' & typingErrorMadeOnTrial == 0 & phoneNrLengthAfterKeyPress ==11)
+dualDialData <- subset(kpData, partOfExperiment == 'dualDialFocus' & typingErrorMadeOnTrial == 0 & phoneNrLengthAfterKeyPress ==11)
+
+View(dualSteerData)
+
+# Average time per participant dualSteer
+mds <-mean(aggregate(timeRelativeToTrialStart~pp,dualSteerData,mean)$timeRelativeToTrialStart)
+# Std dualSteer
+sdds <-sd(aggregate(timeRelativeToTrialStart~pp,dualSteerData,mean)$timeRelativeToTrialStart)
+# Standard Error dualSteer
+seds <-sd(aggregate(timeRelativeToTrialStart~pp,dualSteerData,mean)$timeRelativeToTrialStart) / sqrt(12)
+
+
+
+# Average time per participant dualDial
+mdd<-mean(aggregate(timeRelativeToTrialStart~pp,dualDialData,mean)$timeRelativeToTrialStart)
+# Std dualDial
+sddd<-sd(aggregate(timeRelativeToTrialStart~pp,dualDialData,mean)$timeRelativeToTrialStart)
+# Standard Error dualDial
+sedd<-sd(aggregate(timeRelativeToTrialStart~pp,dualDialData,mean)$timeRelativeToTrialStart)/ sqrt(12)
+
+
+table <- matrix(c(mds,sdds,seds,mdd,sddd,sedd),ncol =3, byrow=TRUE)
+colnames(table) <-c("M", "SD","SE")
+rownames(table) <- c("Steering Focus", "Dialing Focus")
+table <- as.data.frame(table)
+table
+div <- function(x){x/1000}
+table <- mutate_each(table, funs(div))
+table
+```
+
+```{r}
+# Question 1b
+dualSteerData <- subset(kpData, partOfExperiment == 'dualSteerFocus' & typingErrorMadeOnTrial == 0)
+dualDialData <- subset(kpData, partOfExperiment == 'dualDialFocus' & typingErrorMadeOnTrial == 0)
+
+# Mean Lateral Deviation Dual Steer
+print("dual Steer Lateral Deviation")
+mean(aggregate(abs(lanePosition)~pp,dualSteerData,mean)$'abs(lanePosition)')
+# Std Lateral Deviation Dual Steer
+sd(aggregate(abs(lanePosition)~pp,dualSteerData,mean)$'abs(lanePosition)')
+# Standard Error Lateral Deviation Dual Steer
+sd(aggregate(abs(lanePosition)~pp,dualSteerData,mean)$'abs(lanePosition)')/ sqrt(12)
+
+# Mean Lateral Deviation Dual Dial
+print("dual Dial Lateral Deviation")
+mean(aggregate(abs(lanePosition)~pp,dualDialData,mean)$'abs(lanePosition)')
+# Std Lateral Deviation Dual Dial
+sd(aggregate(abs(lanePosition)~pp,dualDialData,mean)$'abs(lanePosition)')
+# Standard Error Lateral Deviation Dual Dial
+sd(aggregate(abs(lanePosition)~pp,dualDialData,mean)$'abs(lanePosition)')/ sqrt(12)
+
+```
+
+
