@@ -13,6 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 #Import libraries
 library(readr)
 library(dplyr)
+library(ggplot2)
 ```
 
 
@@ -24,7 +25,9 @@ library(dplyr)
 
 kpData <- read_csv("keyPressDataWithLaneDeviation.csv")
 View(kpData)
+```
 
+```{r}
 # Report Mean, Standard Deviation, and Standard Error of the Mean
 # for dualSteerFocus and dualDialFocus
 dualSteerData <- subset(kpData, partOfExperiment == 'dualSteerFocus' & typingErrorMadeOnTrial == 0 & phoneNrLengthAfterKeyPress ==11)
@@ -82,4 +85,99 @@ sd(aggregate(abs(lanePosition)~pp,dualDialData,mean)$'abs(lanePosition)')/ sqrt(
 
 ```
 
+```{r}
+# Question 1C
+# Aggregate averages per participant per digit typed and condition --> average across participants
+# Take absolute values of lane deviation
+# Use phoneNrLengthAfterKeyPress for absolute lane deviation over time 
+
+
+# Subset data with only Dial and Steer Data, without errors made on trial
+
+
+tableData %>%
+  subset(partOfExperiment =='dualDialFocus') %>%
+  aggregate(by = list(.$phoneNrLengthAfterKeyPress),
+          FUN= mean)
+
+
+aggregate(subset(tableData, partOfExperiment == 'dualDialFocus'),
+          by = list(.$phoneNrLengthAfterKeyPress),
+          FUN= mean)
+
+tableData
+# Relevant data for DialData
+dialData <- kpData %>% 
+  filter(partOfExperiment =="dualDialFocus" & typingErrorMadeOnTrial == 0)%>%
+  select(pp, trial, phoneNrLengthAfterKeyPress, timeRelativeToTrialStart,
+         lanePosition, partOfExperiment)
+
+dialData
+
+# Relevant data for SteerData
+steerData <- kpData %>% 
+  filter(partOfExperiment =="dualSteerFocus" & typingErrorMadeOnTrial == 0)%>%
+  select(pp, trial, phoneNrLengthAfterKeyPress, timeRelativeToTrialStart,
+         lanePosition, partOfExperiment)
+
+steerData
+
+dialData %>%
+  group_by(pp, phoneNrLengthAfterKeyPress) %>%
+  summarize(mean_time = mean(timeRelativeToTrialStart, na.rm = TRUE)/1000, 
+            mean_deviation = mean(abs(lanePosition)))
+
+steerData %>%
+  group_by(pp, phoneNrLengthAfterKeyPress) %>%
+  summarize(mean_time = mean(timeRelativeToTrialStart, na.rm = TRUE)/1000, 
+            mean_deviation = mean(abs(lanePosition)))
+
+
+
+# Subset averages per participant  
+averagesPerPP <- kpData %>% 
+  filter(typingErrorMadeOnTrial == 0, partOfExperiment == "dualDialFocus" |  # Filter relevant data
+           partOfExperiment == "dualSteerFocus")%>%
+  select(pp, trial, phoneNrLengthAfterKeyPress, timeRelativeToTrialStart,   # Select relevant cols
+         lanePosition, partOfExperiment) %>%
+  group_by(pp, phoneNrLengthAfterKeyPress, partOfExperiment) %>%            # Group by by relevant cols
+  summarize(mean_time = mean(timeRelativeToTrialStart, na.rm = TRUE)/1000,  # Get mean time and dev
+            mean_deviation = mean(abs(lanePosition)))
+
+# Get Overall means to be plotted
+averageAveragesPerPP <- averagesPerPP %>%
+  group_by(phoneNrLengthAfterKeyPress, partOfExperiment) %>%  # group by relevant cols
+  summarize(dialing_time = mean(mean_time),                   # Get overall means (mean over pps)
+            lateral_deviation = mean(mean_deviation),
+            sd = sd(mean_deviation))                          # Get SD?
+
+
+averageAveragesPerPP %>%
+  group_by(partOfExperiment) 
+
+tabData
+
+# Plot Data using ggplot2
+ggplot(data = averageAveragesPerPP,
+       mapping = aes(x = dialing_time, 
+                     y = lateral_deviation, 
+                     colour = partOfExperiment)) +
+        geom_point() +
+        geom_line() + 
+        geom_errorbar(aes(ymin=lateral_deviation-sd,       # Error Bars
+                          ymax=lateral_deviation+sd), 
+                      width = .2) +
+        scale_fill_discrete(name = "Legend",labels = c("Dialing Focus", "Steering Focus")) +
+        labs(x = "Dialing Time (sec)", y = "Lateral Deviation (m)",
+             title = "Dialing Time vs Lateral Deviation") + 
+         
+        theme_minimal()
+
+# TO DO: 
+# Uitzoeken wat er mis is met de SDs. Vgm wel op de juiste plek gecalculate, 
+# Misschien SD / 2? 
+# Plot Lane Boundary erin mikken
+# Labels netjes maken
+
+```
 
