@@ -149,7 +149,8 @@ averageAveragesPerPP <- averagesPerPP %>%
   group_by(phoneNrLengthAfterKeyPress, partOfExperiment) %>%  # group by relevant cols
   summarize(dialing_time = mean(mean_time),                   # Get overall means (mean over pps)
             lateral_deviation = mean(mean_deviation),
-            sd = sd(mean_deviation))                          # Get SD?
+            se = (sd(mean_deviation) / sqrt(length(mean_deviation)))
+            )                          
 
 
 averageAveragesPerPP %>%
@@ -164,20 +165,27 @@ ggplot(data = averageAveragesPerPP,
                      colour = partOfExperiment)) +
         geom_point() +
         geom_line() + 
-        geom_errorbar(aes(ymin=lateral_deviation-sd,       # Error Bars
-                          ymax=lateral_deviation+sd), 
+        geom_errorbar(aes(ymin=lateral_deviation-se,       # Error Bars
+                          ymax=lateral_deviation+se), 
                       width = .2) +
         scale_fill_discrete(name = "Legend",labels = c("Dialing Focus", "Steering Focus")) +
         labs(x = "Dialing Time (sec)", y = "Lateral Deviation (m)",
              title = "Dialing Time vs Lateral Deviation") + 
-         
+        xlim(0,10) + 
+        ylim(0,1.20) + 
+        geom_hline(yintercept= 0.8010104) + 
         theme_minimal()
+
 
 # TO DO: 
 # Uitzoeken wat er mis is met de SDs. Vgm wel op de juiste plek gecalculate, 
 # Misschien SD / 2? 
 # Plot Lane Boundary erin mikken
 # Labels netjes maken
+# Check hoe veel punten ik er in moet zetten
+# Check of de typingErrorMadeOnTrial == 0 moet zijn
+# Misschien door 1000 delen later
+
 
 ```
 
