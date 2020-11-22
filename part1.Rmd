@@ -207,14 +207,6 @@ ggplot(data = averageAveragesPerPP,
          #                    labels = c("Dial Focus", "Steering Focus")) +
         #geom_hline(yintercept= 0.8010104) + # Lane Boundary hoeft niet lol 
         theme_minimal()
-        
-
-
-# TO DO: 
-
-# Check hoe veel punten ik er in moet zetten
-# Check of de typingErrorMadeOnTrial == 0 moet zijn
-# Misschien door 1000 delen later
 
 ```
 
@@ -293,7 +285,7 @@ for(t in trials){
       
     }
     else{
-      deviation = sample(rnorm(1000,0.0,.013), size = 1)
+      deviation = sample(rnorm(1000,0.0,.13), size = 1)
       position = position + deviation # CUMsum the position points
       trialnumber <- c(trialnumber, t)
       pos <- c(pos, position)
@@ -302,11 +294,11 @@ for(t in trials){
   }
 }
 
-df <-data.frame(trialnumber, time, pos) # Bind vectors together in a dataframe
-df
+simulatedTrial <-data.frame(trialnumber, time, pos) # Bind vectors together in a dataframe
+simulatedTrial
 
 
-df %>%
+simulatedTrial %>%
   group_by(trialnumber) %>%
   ggplot(mapping = aes(
     x = time,
@@ -314,10 +306,145 @@ df %>%
     group = trialnumber,
     colour = as.factor(trialnumber)
     )) + 
-    geom_line(size= 1.3)  + 
+    geom_line(size= 1)  + 
     theme_minimal() + 
     guides(col = guide_legend(title = "Trial number",nrow= 10)) + 
     labs(title = "Simulated Lateral Position Over Time", x = "Trial Time (ms)", y = "Lateral Position")
 
 ```
+
+
+```{r}
+# 2C Histograms! 
+
+# Histogram for 2A: 
+tableOfDriftValuesCalibration %>%
+  filter(trialTime < 18000, trialTime > 15000) %>%
+  ggplot(aes(x = posX)) + 
+  geom_histogram(binwidth=.05, colour="black", fill="white") +
+  labs(title = "Distribution of car positions in human trial", x = "Car Position", y = "Count")
+
+
+simulatedTrial %>%
+  ggplot(aes(x = pos)) + 
+  geom_histogram(binwidth=.05, colour="black", fill="white") +
+  labs(title = "Distribution of car positions in simulated trials", x = "Car Position", y = "Count")
+  
+```
+
+```{r}
+# 2D Standard Deviation
+
+humanSD <- tableOfDriftValuesCalibration %>%
+  filter(trialTime < 18000, trialTime > 15000)
+
+sd(humanSD$posX)
+#[1] 0.3602139
+
+sd(simulatedTrial$pos)
+#[1] 0.06687965
+```
+```{r}
+# 2E -- check 
+set.seed(300)
+
+sequence = seq(0,3000, by = 50)
+trials = seq(1,20)
+
+trialnumber2e = NULL
+pos2e = NULL
+time2e = NULL
+
+# For loop for simulating trials; using rnorm samples for deviation
+for(t in trials){
+  for (x in sequence){
+    if(x == 0){
+      position = 0
+      deviation = 0
+      position = position + deviation
+      trialnumber2e <- c(trialnumber2e, t)
+      pos2e <- c(pos2e, position)
+      time2e <- c(time2e,x)
+      
+    }
+    else{
+      deviation = sample(rnorm(1000,0.0,.00699), size = 1)
+      position = position + deviation # CUMsum the position points
+      trialnumber2e <- c(trialnumber2e, t)
+      pos2e <- c(pos2e, position)
+      time2e <- c(time2e,x)
+    }
+  }
+}
+
+simulatedTrial2e <-data.frame(trialnumber2e, time2e, pos2e) # Bind vectors together in a dataframe
+simulatedTrial2e
+
+
+simulatedTrial2e %>%
+  group_by(trialnumber2e) %>%
+  ggplot(mapping = aes(
+    x = time2e,
+    y = pos2e,
+    group = trialnumber2e,
+    colour = as.factor(trialnumber2e)
+    )) + 
+    geom_line(size= 1)  + 
+    theme_minimal() + 
+    guides(col = guide_legend(title = "Trial number",nrow= 10)) + 
+    labs(title = "Simulated Lateral Position Over Time", x = "Trial Time (ms)", y = "Lateral Position")
+
+simulatedTrial2e %>%
+  ggplot(aes(x = pos2e)) + 
+  geom_histogram(binwidth=.05, colour="black", fill="white") +
+  labs(title = "Distribution of car positions in simulated trials", x = "Car Position", y = "Count")
+
+sd(simulatedTrial2e$pos2e)
+
+```
+```{r}
+### Model Gaussian stuff
+
+```
+
+
+
+```{r}
+# Get average interkeypress interval between two digits in single task trial (singleDialing2)
+# Calculate average across participants, the average interval for the average participant
+meanKeyPressIntervals<-
+  kpData %>%
+  filter(partOfExperiment == "singleDialing2", typingErrorMadeOnTrial == 0) %>%
+  group_by(pp, trial) %>%
+  summarise(keyPressInterval = diff(timeRelativeToTrialStart)) %>% 
+  group_by(pp) %>%
+  summarise(meanKeyPressInterval = mean(keyPressInterval)) 
+
+# 3a: [1] 274.0924 == mean key press interval for the average participant
+mean(meanKeyPressIntervals$meanKeyPressInterval)
+
+
+```
+
+```{r}
+#4a 
+runOneTrial(c(), 5, c(1,6), 11, "07854325698")
+runOneTrial(c(4,5), 5, c(1,6), 11, "07854325698")
+
+runAllSimpleStrategies(500, "07854325698")
+
+
+```
+
+
+```{r}
+runAllSimpleStrategies(200, "07854325698")
+```
+
+
+```{r}
+#Question 5
+
+```
+
 

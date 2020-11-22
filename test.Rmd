@@ -1,0 +1,25 @@
+---
+title: "Ass1 Individual"
+author: "Saif"
+date: "20-11-2020"
+output: html_document
+---
+
+## Question 5 
+###A. 
+We can see that the participants in the dialing focus are highly efficient, since the data for this focus is even outside the performance space edge -- there is no interleaving. This is not representative of human behaviour.  However, the steering focus data on the other hand, is not on the edge of the performance space, but sits a little higher than that. My idea is that since the steering focus strategy can therefore be more optimized, and is thus not highly efficient (as in that it could be more efficient). 
+
+###B. 
+No, otherwise the chunk interleaving strategy crosses would be clustered around the steering focus data datapoint. 
+
+
+-- To Do --
+
+
+## Question 6
+#A.From the plots we can see that the regular IKI does put the steering and dialing focus data points on the edge of th performance space, as can be seen in the first four plots. We want those data points to be situated on the performance space, as that resembles the human data. Therefore, calibrated IKI is required, and this manipulation is crucial. 
+In the plots we can see that the plots with <Calibrated IKI, Regular Drift, 10 sim>, <Calibrated IKI, Calibrated Drift, 10 sim> and <Calibrated IKI, Regular Drift, 50 sim> show data that resembles human behaviour the most. The last plot shows that the steering and dialing data points are beyond the performance space and therefore not completely similar. From this, it can be derived that it is not crucial to differ between regular or calibrated drift, not is it crucial to differ between 10 or 50 simulations. 
+
+###B.  No, participants also seem to interleave at other points in time than at the natural break point. 
+
+
