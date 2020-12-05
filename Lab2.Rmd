@@ -11,10 +11,10 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 # Read data and create 12 subject with added noise
 NeuralResponses <- read.table('NeuralResponses')
-
+set.seed(100)
 # Use a for loop that so that every subject consistently gets the 'same' rnorm every time this loop is called, due to the seed assigned to the subject being the same everytime the loop is called. The subjects do get different distributions of rnorms because within the loop the seed is different per subject
 for (i  in 1:12) {
-  set.seed(i)
+  
   nam <- paste("subject", i, sep = "")
   assign(nam, rnorm(9200, 1, 0)+ NeuralResponses)
 }
