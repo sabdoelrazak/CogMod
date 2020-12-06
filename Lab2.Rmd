@@ -7,19 +7,78 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r}
+library(dplyr)
+library(ggcorrplot)
+```
 
 ```{r}
 # Read data and create 12 subject with added noise
 NeuralResponses <- read.table('NeuralResponses')
 set.seed(100)
-# Use a for loop that so that every subject consistently gets the 'same' rnorm every time this loop is called, due to the seed assigned to the subject being the same everytime the loop is called. The subjects do get different distributions of rnorms because within the loop the seed is different per subject
 for (i  in 1:12) {
-  
   nam <- paste("subject", i, sep = "")
-  assign(nam, rnorm(9200, 1, 0)+ NeuralResponses)
+  assign(nam, rnorm(9200, 0, 1)+ NeuralResponses)
 }
 
+```
 
+
+```{r}
+# RDM for the original NeuralResponses
+NeurSpons = as.data.frame(cor(t(NeuralResponses), method = "pearson"))
+NeurSpons %>%
+  mutate_all(funs(1-.)) %>%
+  ggcorrplot() + 
+  ggtitle("RDM of Original Neural Responses")
+
+
+# RDM for subjects
+subject1 %>%
+  t() %>%
+  cor(method = 'pearson') %>%
+  as.data.frame() %>%
+  mutate_all(funs(1-.)) %>%
+  ggcorrplot() + 
+  ggtitle("RDM of Subject1")
+
+subject2 %>%
+  t() %>%
+  cor(method = 'pearson') %>%
+  as.data.frame() %>%
+  mutate_all(funs(1-.)) %>%
+  ggcorrplot() + 
+  ggtitle("RDM of Subject2")
+
+subject3 %>%
+  t() %>%
+  cor(method = 'pearson') %>%
+  as.data.frame() %>%
+  mutate_all(funs(1-.)) %>%
+  ggcorrplot() + 
+  ggtitle("RDM of Subject3")
+
+subject4 %>%
+  t() %>%
+  cor(method = 'pearson') %>%
+  as.data.frame() %>%
+  mutate_all(funs(1-.)) %>%
+  ggcorrplot() + 
+  ggtitle("RDM of Subject4")
+
+#### ----- ####
 
 ```
+```{r}
+meanMatrix = (subject1 + subject2 + subject3 + subject4 + subject5+ subject6+
+                subject7 + subject8 + subject9 + subject10 + subject11 + subject12) / 12 
+meanMatrix %>%
+  t() %>%
+  cor(method = 'pearson') %>%
+  as.data.frame() %>%
+  mutate_all(funs(1-.)) %>%
+  ggcorrplot() + 
+  ggtitle("averaged RDM of all subjects")
+```
+
 
