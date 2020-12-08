@@ -116,7 +116,20 @@ animacyMatrix <- as.data.frame(matrix(loopThruVec(CategoryVectors$V1),
 
 # Extract the rows 
 
-
+# Returns pairs of same animacy, does not use the pairs that compare to itself (e.g. pair <0,0> is not returned)
+selectSameAnimacy <- function(df, animacy) {
+  combinationPairs <- tibble(x,y) # Nog ff kijken hoe ik dit ga opslaan
+  for (x in 1:ncol(df)) {
+    for (y in 1:nrow(df)) {
+      if(df[x,y] == animacy & x != y){
+        combinationPairs <- add_row(x,y)
+        # print(paste(x,y))
+      }
+    }
+  }
+  return(combinationPairs)
+  }
+selectSameAnimacy(animacyMatrix, 0)
 
 animacyMatrix %>%
   t() %>%
@@ -124,6 +137,7 @@ animacyMatrix %>%
   as.data.frame() %>%
   ggcorrplot() + 
   ggtitle("averaged RDM of all subjects")
+
 
 
 ## TEST the Animacy Matrix with a smaller vector ####
