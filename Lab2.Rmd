@@ -27,8 +27,10 @@ for (i  in 1:12) {
 
 ```{r}
 # RDM for the original NeuralResponses
-NeurSpons = as.data.frame(cor(t(NeuralResponses), method = "pearson"))
-NeurSpons %>%
+NeuralResponses %>%
+  t() %>%
+  cor(method = 'pearson') %>% 
+  as.data.frame() %>% 
   mutate_all(funs(1-.)) %>%
   ggcorrplot() + 
   ggtitle("RDM of Original Neural Responses")
@@ -90,31 +92,45 @@ CategoryVectors <- read.table('CategoryVectors')
 # Labels of the categories (12 categories)
 CategoryLabels <- read.table('CategoryLabels')
 
+# Function that loops through a vector 
+# And compares each pair 
+loopThruVec <- function(vector) {
+  vec <- vector()
+  for (x in 1:length(vector)) {
+    for (y in 1:length(vector)) {
+        if(vector[x] == vector[y]){
+          vec <- append(vec, 0)
+        }
+        else{
+          vec <- append(vec, 1)
+        }
+      }
+  }
+  return(vec)
+}
 
-CategoryVectors %>%
-  select(1) %>%
+
+animacyMatrix <- as.data.frame(matrix(loopThruVec(CategoryVectors$V1),
+                nrow = length(CategoryVectors$V1),
+                ncol = length(CategoryVectors$V1)))
+
+# Extract the rows 
+
+
+
+animacyMatrix %>%
   t() %>%
-  
   cor(method = 'pearson') %>%
   as.data.frame() %>%
-  mutate_all(funs(1-.)) %>%
   ggcorrplot() + 
-  ggtitle("RDM of CategoryVectors") 
+  ggtitle("averaged RDM of all subjects")
 
 
-
-df1 <- CategoryVectors %>%
-  select(1) %>% 
-  t() %>% 
-  as.data.frame()
-
-df1
-
-
-animacyMatrix <- function(df) {
-  newDf <- data.frame()
-  
-}
+## TEST the Animacy Matrix with a smaller vector ####
+testVector <- c(0,0,1,1)
+testAnimacy <- as.data.frame(matrix(loopThruVec(testVector),
+                                    nrow = length(testVector),
+                                    ncol = length(testVector)))
 
 ```
 
