@@ -117,8 +117,13 @@ animacyMatrix <- as.data.frame(matrix(loopThruVec(CategoryVectors$V1),
 # Extract the rows 
 
 # Returns pairs of same animacy, does not use the pairs that compare to itself (e.g. pair <0,0> is not returned)
+
+# Create cells <- c(), append(cells, c(waarden))
+# Maak matrix hiervan, weet het aantal rijen
+# Maak hier dataframe van (colnames: pairX, pairY, animacy, dissimilarity waarde)
+
 selectSameAnimacy <- function(df, animacy) {
-  combinationPairs <- tibble(x,y) # Nog ff kijken hoe ik dit ga opslaan
+  combinationPairs <- data.frame(pairX = NA, pairY = NA)
   for (x in 1:ncol(df)) {
     for (y in 1:nrow(df)) {
       if(df[x,y] == animacy & x != y){
