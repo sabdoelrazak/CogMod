@@ -82,6 +82,7 @@ meanMatrix %>%
   mutate_all(funs(1-.)) %>%
   ggcorrplot() + 
   ggtitle("averaged RDM of all subjects")
+
 ```
 
 # Hypothesis Testing (4 - 10)
@@ -112,7 +113,17 @@ loopThruVec <- function(vector) {
 
 animacyMatrix <- as.data.frame(matrix(loopThruVec(CategoryVectors$V1),
                 nrow = length(CategoryVectors$V1),
-                ncol = length(CategoryVectors$V1)))
+                ncol = length(CategoryVectors$V1))) 
+colnames(animacyMatrix) <- c(1:92) # Rename column names to the correct number for easier extraction later
+
+
+
+## Test correlation between two rows: 
+#cor = cor()
+# Transposed Neural Data for Correlation Calculation
+transposedNeuralData <- as.data.frame(t(NeuralResponses))
+colnames(transposedNeuralData) <- c(1:92)
+#1- cor(testSpons[1], testSpons[2], method = 'pearson')
 
 # Extract the rows 
 
@@ -123,18 +134,25 @@ animacyMatrix <- as.data.frame(matrix(loopThruVec(CategoryVectors$V1),
 # Maak hier dataframe van (colnames: pairX, pairY, animacy, dissimilarity waarde)
 
 selectSameAnimacy <- function(df, animacy) {
-  combinationPairs <- data.frame(pairX = NA, pairY = NA)
+  cells <- c()    # Instantiate cells 
+  rows <- 0       # To track the amount of rows needed  to split the cells over
   for (x in 1:ncol(df)) {
     for (y in 1:nrow(df)) {
       if(df[x,y] == animacy & x != y){
-        combinationPairs <- add_row(x,y)
+        rows <- rows + 1
+        dissimilarity = 1 - cor(transposedNeuralData[x], transposedNeuralData[y], method = 'pearson')
+        cells <- append(cells, c(x,y,animacy, dissimilarity))
         # print(paste(x,y))
       }
     }
   }
-  return(combinationPairs)
-  }
-selectSameAnimacy(animacyMatrix, 0)
+  m <- matrix(cells, nrow = rows, byrow = TRUE)
+  df <- as.data.frame(m)
+  colnames(df) <- c("x","y","animacystate","dissimilarity")
+  return(df)
+}
+
+a <- selectSameAnimacy(animacyMatrix, 0)
 
 animacyMatrix %>%
   t() %>%
