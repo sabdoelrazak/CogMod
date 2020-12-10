@@ -141,7 +141,7 @@ faceMask <- as.data.frame(matrix(loopThruVec(CategoryVectors$V6),
                 ncol = length(CategoryVectors$V6))) 
 colnames(faceMask) <- c(1:92) # Rename column names to the correct number for easier extraction later
 
-#
+
 
 # Give mask, dataframe over which mask is used, and value in mask
 usemask <- function(mask, df, value) { 
@@ -248,9 +248,103 @@ aniface1 %>% ggcorrplot()
 t.test(aniface0, aniface1)
 ```
 
+# Question 8 - Humanity of objects
 ```{r}
-# Create Human Mask and inhuman Mask
+# Objects 1 - 24 Human, 25-92 not human
+# MATRIX SHOWING SAME Humanity (0) AND DIFFERENT Humanity (1)
+humanMask <- as.data.frame(matrix(loopThruVec(CategoryVectors$V3),
+                                  nrow = length(CategoryVectors$V3),
+                                  ncol = length(CategoryVectors$V3)))
+colnames(humanMask) <- c(1:92)
+humanMask %>% ggcorrplot()
 
+# Compare Humanity (0) to other all other objects: 
+human0 <- usemask(humanMask, rdm(NeuralResponses), 0) %>% 
+  cleanMask()
+human0 %>% 
+  ggcorrplot() + 
+  ggtitle("RDM of Responses with Same Humanity")
+
+human1 <- usemask(humanMask, rdm(NeuralResponses), 1) %>% 
+  cleanMask()
+human1 %>% 
+  ggcorrplot() + 
+  ggtitle("RDM of Responses with Different Humaity")
+
+# Unpaired t-test
+t.test(human0, human1)
+
+
+### Then -- select only animate objects
+
+
+########## Animated Human Objects vs Animated NonHuman Objects #####
+# Objects 1 - 48 are animate:  thus remove rows 49 onwards
+animateNeural <- NeuralResponses[-c(49:92),] # Neural Responses with only Animate Objects 
+
+# Create specific Human Mask for animated objects
+aniHumanMask <- humanMask <- as.data.frame(matrix(loopThruVec(CategoryVectors$V3[0:48]),
+                nrow = length(CategoryVectors$V3[0:48]),
+                ncol = length(CategoryVectors$V3[0:48]))) 
+colnames(aniHumanMask) <- c(1:ncol(aniHumanMask)) 
+aniHumanMask %>% ggcorrplot()
+
+
+anihuman0 <- usemask(aniHumanMask, rdm(animateNeural),0) %>% 
+  cleanMask()
+anihuman0 %>% ggcorrplot()
+
+anihuman1 <- usemask(aniHumanMask, rdm(animateNeural),1) %>% 
+  cleanMask()
+anihuman1 %>% ggcorrplot()
+
+# T-Test between animated human objects and animated non-human objects
+t.test(anihuman0, anihuman1)
+```
+
+# Question 9 - ANOVA for Animacy and Faceness having the same effect
+```{r}
+## Visualizations of different animacies for Original Neural Data
+animacy0 <- usemask(animacyMask, rdm(NeuralResponses), 0) %>% 
+  cleanMask()
+animacy0 %>% 
+  ggcorrplot() + 
+  ggtitle("RDM of Responses with Same Animacy")
+
+animacy1 <- usemask(animacyMask, rdm(NeuralResponses), 1) %>% 
+  cleanMask()
+animacy1 %>% 
+  ggcorrplot() + 
+  ggtitle("RDM of Responses with Different Animacy")
+
+# Unpaired t-test
+t.test(animacy0, animacy1)
+##### 
+# Objects 1 - 48 are animate:  thus remove rows 49 onwards
+animateNeural <- NeuralResponses[-c(49:92),] # Neural Responses with only Animate Objects 
+
+# Create specific Face Mask for animated objects
+anifaceMask <- faceMask <- as.data.frame(matrix(loopThruVec(CategoryVectors$V6[0:48]),
+                nrow = length(CategoryVectors$V6[0:48]),
+                ncol = length(CategoryVectors$V6[0:48]))) 
+colnames(anifaceMask) <- c(1:ncol(anifaceMask)) 
+anifaceMask %>% ggcorrplot()
+
+
+aniface0 <- usemask(anifaceMask, rdm(animateNeural),0) %>% 
+  cleanMask()
+aniface0 %>% ggcorrplot()
+
+aniface0in0x0<- as.data.frame(matrix(0, 92,92))
+colnames(aniface0in0x0) <- c(1: ncol(aniface0in0x0))
+
+# ---> dit weer in een 92x92 raster zetten met de rest op 0 
+
+# T-Test between animated objects with same and different face-ness
+t.test(aniface0, aniface1)
+
+
+### HOW AM I SUPPOSED TO DO THIS?
 
 
 ```
@@ -319,29 +413,32 @@ TESTING STUFF DISREGARD:
 
 # Question 11 test unfinished --> 
 ```{r}
-# NeuroRDM <- read.table('NeuroRDM')
-# 
-# ### RMS of NeuroRDM and meanMatrix 
-# 
-# NeuroRDM %>%
-#   t() %>%
-#   cor(method = 'pearson') %>%
-#   as.data.frame() %>%
-#   mutate_all(funs(1-.)) %>%
-#   ggcorrplot() + 
-#   ggtitle("NeuroRDM")
-# 
-# meanMatrix %>%
-#   t() %>%
-#   cor(method = 'pearson') %>%
-#   as.data.frame() %>%
-#   mutate_all(funs(1-.)) %>%
-#   ggcorrplot() + 
-#   ggtitle("averaged RDM of all subjects")
-# 
-# ####  Compare two RDMS
-# 
-# 
+NeuroRDM <- read.table('NeuroRDM')
+colnames(NeuroRDM) <- c(1: ncol(NeuroRDM)) 
+
+
+# NeuroRDM Is already an RDM!
+
+NeuroRDM %>% ggcorrplot()
+
+meanMatrix <- meanMatrix%>%
+  t() %>%
+  cor(method = 'pearson') %>%
+  as.data.frame() %>%
+  mutate_all(funs(1-.)) 
+colnames(meanMatrix) <- c(1: ncol(meanMatrix)) 
+  meanMatrix %>%ggcorrplot() +
+  ggtitle("averaged RDM of all subjects")
+  
+### Then exclude self correlations and duplicate correlations: 
+cleanNeuroRDM <- cleanMask(NeuroRDM)
+
+cleanMeanMatrix <- cleanMask(meanMatrix)
+
+cor.test(cleanNeuroRDM, cleanMeanMatrix)
+####  Compare two RDMS
+
+
 
 ```
 
