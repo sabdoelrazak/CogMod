@@ -7,12 +7,15 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+# Libraries used
 ```{r}
 library(dplyr)
 library(ggcorrplot)
 ```
 
 #Basic RSA (1-3)
+
+# Read data and create Subjects
 ```{r}
 # Read data and create 12 subject with added noise
 NeuralResponses <- read.table('NeuralResponses')
@@ -26,6 +29,21 @@ for (i  in 1:12) {
 
 
 ```{r}
+# RDM function that returns a dataframe with RDMS
+rdm <- function(df) {
+  df<- df %>%
+    t() %>%
+    cor(method = 'pearson') %>% 
+    as.data.frame() %>% 
+    mutate_all(funs(1-.))
+  colnames(df) <- c(1: ncol(df)) 
+  return(df)
+}
+
+neur <- rdm(NeuralResponses)
+neur %>% 
+  ggcorrplot() + 
+  ggtitle("RDM of og Neural Responses")
 # RDM for the original NeuralResponses
 NeuralResponses %>%
   t() %>%
@@ -93,6 +111,7 @@ CategoryVectors <- read.table('CategoryVectors')
 # Labels of the categories (12 categories)
 CategoryLabels <- read.table('CategoryLabels')
 
+# FOR CREATING THE MASK
 # Function that loops through a vector 
 # And compares each pair 
 loopThruVec <- function(vector) {
@@ -110,64 +129,187 @@ loopThruVec <- function(vector) {
   return(vec)
 }
 
-
-animacyMatrix <- as.data.frame(matrix(loopThruVec(CategoryVectors$V1),
+# MATRIX SHOWING SAME ANIMACY (0) AND DIFFERENT ANIMACY (1)
+animacyMask <- as.data.frame(matrix(loopThruVec(CategoryVectors$V1),
                 nrow = length(CategoryVectors$V1),
                 ncol = length(CategoryVectors$V1))) 
-colnames(animacyMatrix) <- c(1:92) # Rename column names to the correct number for easier extraction later
+colnames(animacyMask) <- c(1:92) # Rename column names to the correct number for easier extraction later
 
+# MATRIX SHOWING SAME Faceness (0) AND DIFFERENT Faceness (1)
+faceMask <- as.data.frame(matrix(loopThruVec(CategoryVectors$V6),
+                nrow = length(CategoryVectors$V6),
+                ncol = length(CategoryVectors$V6))) 
+colnames(faceMask) <- c(1:92) # Rename column names to the correct number for easier extraction later
 
+#
 
-## Test correlation between two rows: 
-#cor = cor()
-# Transposed Neural Data for Correlation Calculation
-transposedNeuralData <- as.data.frame(t(NeuralResponses))
-colnames(transposedNeuralData) <- c(1:92)
-#1- cor(testSpons[1], testSpons[2], method = 'pearson')
-
-# Extract the rows 
-
-# Returns pairs of same animacy, does not use the pairs that compare to itself (e.g. pair <0,0> is not returned)
-
-# Create cells <- c(), append(cells, c(waarden))
-# Maak matrix hiervan, weet het aantal rijen
-# Maak hier dataframe van (colnames: pairX, pairY, animacy, dissimilarity waarde)
-
-selectSameAnimacy <- function(df, animacy) {
-  cells <- c()    # Instantiate cells 
-  rows <- 0       # To track the amount of rows needed  to split the cells over
-  for (x in 1:ncol(df)) {
-    for (y in 1:nrow(df)) {
-      if(df[x,y] == animacy & x != y){
-        rows <- rows + 1
-        dissimilarity = 1 - cor(transposedNeuralData[x], transposedNeuralData[y], method = 'pearson')
-        cells <- append(cells, c(x,y,animacy, dissimilarity))
-        # print(paste(x,y))
+# Give mask, dataframe over which mask is used, and value in mask
+usemask <- function(mask, df, value) { 
+ for (x in colnames(mask)) {
+  for(y in row.names(mask)){
+    if(mask[x,y] != value){ # If animacy is not the required animacy given
+      df[x,y] = NA
+      }
+    }
+ }
+  return(df)  
+}
+# Function that removes self-correlations and double correlations
+cleanMask <- function(df) {
+  p <-1
+  for (col in 1: ncol(df)) {
+    for(row in p: nrow(df)){
+      df[col,row] = NA
+    }
+    p <- p +1
+  }
+  for(col in 1:ncol(df)){
+    for(row in 1:nrow(df)){
+      if(col == row){
+        df[col,row] = NA
       }
     }
   }
-  m <- matrix(cells, nrow = rows, byrow = TRUE)
-  df <- as.data.frame(m)
-  colnames(df) <- c("x","y","animacystate","dissimilarity")
   return(df)
 }
+```
 
-a <- selectSameAnimacy(animacyMatrix, 0)
-
-animacyMatrix %>%
-  t() %>%
-  cor(method = 'pearson') %>%
-  as.data.frame() %>%
+# Question 4 - Animacy of Original Data
+```{r}
+## Visualizations of different animacies for Original Neural Data
+animacy0 <- usemask(animacyMask, rdm(NeuralResponses), 0) %>% 
+  cleanMask()
+animacy0 %>% 
   ggcorrplot() + 
-  ggtitle("averaged RDM of all subjects")
+  ggtitle("RDM of Responses with Same Animacy")
+
+animacy1 <- usemask(animacyMask, rdm(NeuralResponses), 1) %>% 
+  cleanMask()
+animacy1 %>% 
+  ggcorrplot() + 
+  ggtitle("RDM of Responses with Different Animacy")
+
+# Unpaired t-test
+t.test(animacy0, animacy1)
+```
+
+# Question 5 - Animacy on subject and averaged subjects
+```{r}
+### T-Test Individual Subject (Subject1)
+sub0 <- usemask(animacyMask, rdm(subject1), 0) %>% 
+  cleanMask()
+
+sub1 <- usemask(animacyMask, rdm(subject1), 1) %>% 
+  cleanMask()
+t.test(sub0, sub1) # T-Test for animacy in subject 1 
+
+### T-Test Mean Subjects 
+mmatrix0 <- usemask(animacyMask, rdm(meanMatrix),0) %>% 
+  cleanMask()
+
+mmatrix1 <- usemask(animacyMask, rdm(meanMatrix),1) %>% 
+  cleanMask()
+t.test(mmatrix0, mmatrix1)
+```
+# Question 6 - Faceness on Original Data
+```{r}
+# Testing Faceness 
+face0 <- usemask(faceMask, rdm(NeuralResponses),0) %>% 
+  cleanMask()
+
+face1 <- usemask(faceMask, rdm(NeuralResponses),1) %>% 
+  cleanMask()
+
+t.test(face0, face1)
+```
+
+# Question 7 - Faceness of Animate Objects
+```{r}
+# Objects 1 - 48 are animate:  thus remove rows 49 onwards
+animateNeural <- NeuralResponses[-c(49:92),] # Neural Responses with only Animate Objects 
+
+# Create specific Face Mask for animated objects
+anifaceMask <- faceMask <- as.data.frame(matrix(loopThruVec(CategoryVectors$V6[0:48]),
+                nrow = length(CategoryVectors$V6[0:48]),
+                ncol = length(CategoryVectors$V6[0:48]))) 
+colnames(anifaceMask) <- c(1:ncol(anifaceMask)) 
+anifaceMask %>% ggcorrplot()
+
+
+aniface0 <- usemask(anifaceMask, rdm(animateNeural),0) %>% 
+  cleanMask()
+aniface0 %>% ggcorrplot()
+
+aniface1 <- usemask(anifaceMask, rdm(animateNeural),1) %>% 
+  cleanMask()
+aniface1 %>% ggcorrplot()
+
+# T-Test between animated objects with same and different face-ness
+t.test(aniface0, aniface1)
+```
+
+```{r}
+# Create Human Mask and inhuman Mask
 
 
 
-## TEST the Animacy Matrix with a smaller vector ####
-testVector <- c(0,0,1,1)
-testAnimacy <- as.data.frame(matrix(loopThruVec(testVector),
-                                    nrow = length(testVector),
-                                    ncol = length(testVector)))
+```
+TESTING STUFF DISREGARD: 
+```{r}
+# ## Test correlation between two rows: 
+# #cor = cor()
+# # Transposed Neural Data for Correlation Calculation
+# transposedNeuralData <- as.data.frame(t(NeuralResponses))
+# colnames(transposedNeuralData) <- c(1:92)
+# #1- cor(testSpons[1], testSpons[2], method = 'pearson')
+# 
+# # Extract the rows 
+# 
+# # Returns pairs of same animacy, does not use the pairs that compare to itself (e.g. pair <0,0> is not returned)
+# 
+# # Create cells <- c(), append(cells, c(waarden))
+# # Maak matrix hiervan, weet het aantal rijen
+# # Maak hier dataframe van (colnames: pairX, pairY, animacy, dissimilarity waarde)
+# 
+# selectSameAnimacy <- function(df, animacy) {
+#   cells <- c()    # Instantiate cells 
+#   rows <- 0       # To track the amount of rows needed  to split the cells over
+#   for (x in 1:ncol(df)) {
+#     for (y in 1:nrow(df)) {
+#       if(df[x,y] == animacy & x != y){
+#         rows <- rows + 1
+#         dissimilarity = 1 - cor(transposedNeuralData[x], transposedNeuralData[y], method = 'pearson')
+#         cells <- append(cells, c(x,y,animacy, dissimilarity))
+#         # print(paste(x,y))
+#       }
+#     }
+#   }
+#   m <- matrix(cells, nrow = rows, byrow = TRUE) # Create a matrix from the cells 
+#   df <- as.data.frame(m) # Create a dataframe from the matrix
+#   colnames(df) <- c("x","y","animacystate","dissimilarity") # Add column names to the dataframe
+#   return(df)
+# }
+# 
+# 
+# 
+# a <- selectSameAnimacy(animacyMatrix, 0)
+# b <- selectSameAnimacy(animacyMatrix,1)
+# 
+# animacyMatrix %>%
+#   t() %>%
+#   cor(method = 'pearson') %>%
+#   as.data.frame() %>%
+#   ggcorrplot() + 
+#   ggtitle("averaged RDM of all subjects")
+# 
+# 
+# 
+# ## TEST the Animacy Matrix with a smaller vector ####
+# testVector <- c(0,0,1,1)
+# 
+# testAnimacy <- as.data.frame(matrix(loopThruVec(testVector),
+#                                     nrow = length(testVector),
+#                                     ncol = length(testVector)))
 
 ```
 
@@ -175,31 +317,31 @@ testAnimacy <- as.data.frame(matrix(loopThruVec(testVector),
 
 
 
-# Question 11 --> 
+# Question 11 test unfinished --> 
 ```{r}
-NeuroRDM <- read.table('NeuroRDM')
-
-### RMS of NeuroRDM and meanMatrix 
-
-NeuroRDM %>%
-  t() %>%
-  cor(method = 'pearson') %>%
-  as.data.frame() %>%
-  mutate_all(funs(1-.)) %>%
-  ggcorrplot() + 
-  ggtitle("NeuroRDM")
-
-meanMatrix %>%
-  t() %>%
-  cor(method = 'pearson') %>%
-  as.data.frame() %>%
-  mutate_all(funs(1-.)) %>%
-  ggcorrplot() + 
-  ggtitle("averaged RDM of all subjects")
-
-####  Compare two RDMS
-
-
+# NeuroRDM <- read.table('NeuroRDM')
+# 
+# ### RMS of NeuroRDM and meanMatrix 
+# 
+# NeuroRDM %>%
+#   t() %>%
+#   cor(method = 'pearson') %>%
+#   as.data.frame() %>%
+#   mutate_all(funs(1-.)) %>%
+#   ggcorrplot() + 
+#   ggtitle("NeuroRDM")
+# 
+# meanMatrix %>%
+#   t() %>%
+#   cor(method = 'pearson') %>%
+#   as.data.frame() %>%
+#   mutate_all(funs(1-.)) %>%
+#   ggcorrplot() + 
+#   ggtitle("averaged RDM of all subjects")
+# 
+# ####  Compare two RDMS
+# 
+# 
 
 ```
 
