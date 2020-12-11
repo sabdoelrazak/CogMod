@@ -210,6 +210,8 @@ mmatrix0 <- usemask(animacyMask, rdm(meanMatrix),0) %>%
 mmatrix1 <- usemask(animacyMask, rdm(meanMatrix),1) %>% 
   cleanMask()
 t.test(mmatrix0, mmatrix1)
+
+#t.test(mmatrix1, mmatrix0)
 ```
 # Question 6 - Faceness on Original Data
 ```{r}
@@ -257,6 +259,28 @@ humanMask <- as.data.frame(matrix(loopThruVec(CategoryVectors$V3),
                                   ncol = length(CategoryVectors$V3)))
 colnames(humanMask) <- c(1:92)
 humanMask %>% ggcorrplot()
+
+
+# normalMask <- function(vector) {
+#   vec <- vector()
+#   for (x in 1:length(vector)) {
+#     for (y in 1:length(vector)) {
+#         if(vector[x] == vector[y]){
+#           vec <- append(vec, 0)
+#         }
+#         else{
+#           vec <- append(vec, 1)
+#         }
+#       }
+#   }
+#   return(vec)
+# }
+
+
+
+
+
+humanMask <- as.data.frame(matrix())
 
 # Compare Humanity (0) to other all other objects: 
 human0 <- usemask(humanMask, rdm(NeuralResponses), 0) %>% 
@@ -345,6 +369,67 @@ t.test(aniface0, aniface1)
 
 
 ### HOW AM I SUPPOSED TO DO THIS?
+anova_test <- aov(neural_matrix ~ face_animated_matrix + animacy_matrix)
+summary(anova_test)
+etaSquared(anova_test, type = 2, anova = TRUE)
+
+
+
+
+# Need: 
+View(neur)
+View(aniface0)
+View(animacy0)
+
+anova_aniface0 <- aniface0
+anova_aniface0[is.na(anova_aniface0)] <- 0
+
+for (i in 1:44) {
+ anova_aniface0 <- cbind(anova_aniface0, 0) 
+}
+colnames(anova_aniface0) <- c(1:92)
+
+
+for (i in 1:44) {
+ anova_aniface0 <- rbind(anova_aniface0, 0) 
+}
+row.names(anova_aniface0) <- c(1:92)
+View(anova_aniface0)
+anova_animacy0 <- animacy0
+anova_animacy0[is.na(anova_animacy0)] <- 0
+View(anova_animacy0)
+
+
+anova_neur <- cleanMask(neur)
+anova_neur[is.na(anova_neur)] <- 0
+View(anova_neur)
+View(anova_aniface0)
+View(anova_animacy0)
+
+View(matrix(neur))
+
+#Create dataframe  with column #1 original 
+
+anova_test <- aov(as.matrix(anova_neur) ~ as.matrix(anova_aniface0) + as.matrix(anova_animacy0))
+summary(anova_test)
+
+anova_test1 <- aov(as.vector(neur) ~ as.vector(anova_aniface0) + as.vector(anova_animacy0))
+summary(anova_test1)
+
+
+inputframe <- data.frame(diss = as.vector(anova_neur), a = as.factor(as.vector(anova_animacy0)), af = as.factor(as.vector(anova_aniface0)))
+inputframe
+linearmodel <- glm(diss ~ a + af, data = inputframe)
+anova(linearmodel)
+
+
+typeof(neur)
+typeof(anova_aniface0)
+
+
+saveRDS(neur, "neur.rds")
+saveRDS(aniface0, "aniface0.rds")
+saveRDS(animacy0, "animacy0.rds")
 
 
 ```
@@ -415,11 +500,10 @@ TESTING STUFF DISREGARD:
 ```{r}
 NeuroRDM <- read.table('NeuroRDM')
 colnames(NeuroRDM) <- c(1: ncol(NeuroRDM)) 
-
-
 # NeuroRDM Is already an RDM!
-
 NeuroRDM %>% ggcorrplot()
+
+
 
 meanMatrix <- meanMatrix%>%
   t() %>%
@@ -432,13 +516,22 @@ colnames(meanMatrix) <- c(1: ncol(meanMatrix))
   
 ### Then exclude self correlations and duplicate correlations: 
 cleanNeuroRDM <- cleanMask(NeuroRDM)
+cleanNeuroRDM %>% ggcorrplot()
+View(cleanNeuroRDM)
 
 cleanMeanMatrix <- cleanMask(meanMatrix)
+cleanMeanMatrix %>% ggcorrplot()
 
-cor.test(cleanNeuroRDM, cleanMeanMatrix)
+
+cor.test(as.vector((cleanNeuroRDM)), as.vector((cleanMeanMatrix)))
+# Reshape
+
+
+cor.test(na.omit(cleanNeuroRDM), na.omit(cleanMeanMatrix), method = 'pearson')
 ####  Compare two RDMS
 
 
+View(as.vector(cleanMeanMatrix))
 
 ```
 
