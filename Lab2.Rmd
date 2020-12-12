@@ -11,6 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 library(dplyr)
 library(ggcorrplot)
+library(sjstats)
 ```
 
 #Basic RSA (1-3)
@@ -341,9 +342,6 @@ animacy1 %>%
   ggcorrplot() + 
   ggtitle("RDM of Responses with Different Animacy")
 
-# Unpaired t-test
-t.test(animacy0, animacy1)
-##### 
 # Objects 1 - 48 are animate:  thus remove rows 49 onwards
 animateNeural <- NeuralResponses[-c(49:92),] # Neural Responses with only Animate Objects 
 
@@ -359,80 +357,101 @@ aniface0 <- usemask(anifaceMask, rdm(animateNeural),0) %>%
   cleanMask()
 aniface0 %>% ggcorrplot()
 
-aniface0in0x0<- as.data.frame(matrix(0, 92,92))
-colnames(aniface0in0x0) <- c(1: ncol(aniface0in0x0))
-
-# ---> dit weer in een 92x92 raster zetten met de rest op 0 
-
-# T-Test between animated objects with same and different face-ness
-t.test(aniface0, aniface1)
-
 
 ### HOW AM I SUPPOSED TO DO THIS?
-anova_test <- aov(neural_matrix ~ face_animated_matrix + animacy_matrix)
-summary(anova_test)
-etaSquared(anova_test, type = 2, anova = TRUE)
-
-
-
+#anova_test <- aov(neural_matrix ~ face_animated_matrix + animacy_matrix)
+#summary(anova_test)
+#etaSquared(anova_test, type = 2, anova = TRUE)
 
 # Need: 
-View(neur)
-View(aniface0)
-View(animacy0)
+#View(neur)
+#View(aniface0)
+#View(animacy0)
 
+
+# Create anova vectors  -- put all NAs to 0 
+
+## Anova Aniface0
 anova_aniface0 <- aniface0
 anova_aniface0[is.na(anova_aniface0)] <- 0
-
+View(anova_aniface0)
 for (i in 1:44) {
  anova_aniface0 <- cbind(anova_aniface0, 0) 
 }
 colnames(anova_aniface0) <- c(1:92)
-
-
 for (i in 1:44) {
  anova_aniface0 <- rbind(anova_aniface0, 0) 
 }
 row.names(anova_aniface0) <- c(1:92)
 View(anova_aniface0)
+
+## Anova Animacy0
 anova_animacy0 <- animacy0
 anova_animacy0[is.na(anova_animacy0)] <- 0
 View(anova_animacy0)
 
-
+## Anova OG Neural
 anova_neur <- cleanMask(neur)
 anova_neur[is.na(anova_neur)] <- 0
 View(anova_neur)
-View(anova_aniface0)
-View(anova_animacy0)
 
-View(matrix(neur))
+#Create dataframe  with column #1 original column #2 aniface0 column3 animacy0
 
-#Create dataframe  with column #1 original 
+# Function that takes all the values of the columns and extends them in to a single vector
+colToVec <- function(df) {
+  vec <- vector()
+  for (i in 1: ncol(df)) {
+    vec<- append(vec, df[,i])
+  }
+  return(vec)
+}
 
-anova_test <- aov(as.matrix(anova_neur) ~ as.matrix(anova_aniface0) + as.matrix(anova_animacy0))
+# Create all vectors
+neurvec <- colToVec(anova_neur)
+aniface0vec <- colToVec(anova_aniface0)
+animacy0vec <- colToVec(anova_animacy0)
+
+# Check equal length
+length(neurvec)
+length(aniface0vec)
+length(animacy0vec)
+
+# Put all vectors in a single dataframe
+anovadf <- data.frame()
+anovadf <- cbind(anovadf, neurvec)
+anovadf <- cbind(anovadf, aniface0vec)
+anovadf<- cbind(anovadf, animacy0vec)
+anovadf <- as.data.frame(anovadf)
+View(anovadf)
+
+# Perform the Anova test on the created Dataframe
+anova_test <- aov(anovadf$neurvec ~ anovadf$aniface0vec + anovadf$animacy0vec)
+anova_test
 summary(anova_test)
 
-anova_test1 <- aov(as.vector(neur) ~ as.vector(anova_aniface0) + as.vector(anova_animacy0))
-summary(anova_test1)
+eta_sq(anova_test)
+eta_sq(anova_test, partial = TRUE)
+omega_sq(anova_test)
+cohens_f(anova_test)
 
 
-inputframe <- data.frame(diss = as.vector(anova_neur), a = as.factor(as.vector(anova_animacy0)), af = as.factor(as.vector(anova_aniface0)))
-inputframe
-linearmodel <- glm(diss ~ a + af, data = inputframe)
+anova_test2 <- aov(anovadf$neurvec ~ anovadf$animacy0vec + anovadf$aniface0vec)
+summary(anova_test2)
+
+
+
+
+# Create a GLM model and then do the Anova
+linearmodel <- glm(neurvec ~ aniface0vec + animacy0vec, data = anovadf)
 anova(linearmodel)
+summary(anova(linearmodel))
 
 
-typeof(neur)
-typeof(anova_aniface0)
 
-
-saveRDS(neur, "neur.rds")
-saveRDS(aniface0, "aniface0.rds")
-saveRDS(animacy0, "animacy0.rds")
 
 
 ```
+
 TESTING STUFF DISREGARD: 
 ```{r}
 # ## Test correlation between two rows: 
