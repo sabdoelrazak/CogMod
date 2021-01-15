@@ -406,6 +406,8 @@ colToVec <- function(df) {
   return(vec)
 }
 
+
+
 # Create all vectors
 neurvec <- colToVec(anova_neur)
 aniface0vec <- colToVec(anova_aniface0)
@@ -415,6 +417,8 @@ animacy0vec <- colToVec(anova_animacy0)
 length(neurvec)
 length(aniface0vec)
 length(animacy0vec)
+
+save(neurvec, aniface0vec, animacy0vec, file = "data.RData")
 
 # Put all vectors in a single dataframe
 anovadf <- data.frame()
