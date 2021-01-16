@@ -1,0 +1,99 @@
+---
+title: "Assignment3"
+author: "Saif"
+date: "1/15/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+# Sample Code from the assignment
+```{r}
+library(ggplot2)
+# we will work with points 1 to 250 (cm)
+scale.points <- c(1:250)
+# we create a dataframe for plotting
+example.height <- data.frame(x = scale.points)
+# we use sapply, which is a vectorized function application; see help if
+# you don't understand it
+# we add y, which is just the probability density function described above
+# (normal distribution)
+example.height$y <- sapply(example.height$x, function(x) {
+dnorm(x, mean = 180, sd = 10)
+})
+# this starts the plot creation
+g1 <- ggplot(example.height, aes(x = x, y = y))
+# we make the plot more pretty: we specify it should fill in area and add
+# labels
+g1 <- g1 + geom_area(fill = "green", alpha = 0.4) + xlab("height") + ylab("P") +
+theme_gray(20)
+g1
+```
+
+# Create Literal Listener Function
+```{r}
+literal.listener <- function(x, threshold, densityf, cumulativef) {
+ifelse(x >= threshold, densityf(x)/(1 - cumulativef(threshold)), 0)
+}
+```
+
+# Sample Code 
+```{r}
+threshold <- 170
+example.height$updated <- sapply(example.height$x, function(x) {
+literal.listener(x = x, threshold = threshold, densityf = function(x) {
+dnorm(x, 180, 10)
+}, cumulativef = function(x) {
+pnorm(x, 180, 10)
+})
+})
+# this starts the plot creation
+g1 <- ggplot(example.height, aes(x = x, y = y))
+g1 <- g1 + geom_area(fill = "green", alpha = 0.4)
+# we add the result of updated belief
+g1 <- g1 + geom_area(aes(y = updated), fill = "steelblue", alpha = 0.4)
+g1 <- g1 + xlab("height") + ylab("P") + theme_gray(20)
+g1
+```
+
+# Sample code Expected Success Function
+```{r}
+expected.success <- function(threshold, scale.points, densityf, cumulativef) {
+ifelse(threshold > min(scale.points), sum(sapply(scale.points[scale.points <
+threshold], function(x) {
+densityf(x) * densityf(x)
+})), 0) + sum(sapply(scale.points[scale.points >= threshold], function(x) {
+densityf(x) * literal.listener(x, threshold, densityf, cumulativef)
+}))
+}
+```
+
+
+```{r}
+utility <- function(threshold, scale.points, coverage.parameter, densityf,
+cumulativef) {
+  expected.success(threshold = threshold, scale.points = scale.points, densityf = densityf, cumulativef) +   (coverage.parameter * sum(sapply(scale.points[scale.points>=threshold])))
+
+}
+
+
+
+probability.threshold <- function(threshold, scale.points, lambda, coverage.parameter, densityf, cumulativef){
+    
+    som = 0
+    for(i in scale.points){
+        som = som + exp(lambda * utility(threshold = i, scale.points = scale.points, coverage.parameter = coverage.parameter, densityf = densityf, cumulativef = cumulativef)) 
+    }
+    result = exp(lambda * utility(threshold = threshold, scale.points = scale.points, coverage.parameter = coverage.parameter, densityf = densityf, cumulativef = cumulativef)) / som
+    
+    return(result)
+    
+}
+
+```
+
+
