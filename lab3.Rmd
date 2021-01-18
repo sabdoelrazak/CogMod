@@ -199,12 +199,26 @@ for (threshold in 1:250) {
   vec <- append(vec, y)
 }
 df2 <- data.frame(x = c(1:250), y = vec)
-df2
+df2S
 
 g3 <- ggplot(df, aes(x = x, y = y))
 g3 <- g3 + geom_area(fill = "green", alpha = 0.4)
 g3 <- g3 + xlab("height") + ylab("P") + theme_gray(20)
 g3
+View(vec)
+```
+
+```{r}
+
+
+scale.points <- c(1:250) 
+mylist <- list()
+for(i in scale.points){
+    z <- use.adjective(degree = i, scale.points = scale.points, lambda = 50, coverage.parameter = 0, densityf=function(x) {dnorm(x, 180, 10)}, cumulativef=function(x) {pnorm(x, 180, 10)})
+    mylist <- append(mylist, z)
+}
+
+
 ```
 
 
