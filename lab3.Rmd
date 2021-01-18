@@ -74,26 +74,139 @@ densityf(x) * literal.listener(x, threshold, densityf, cumulativef)
 
 
 ```{r}
-utility <- function(threshold, scale.points, coverage.parameter, densityf,
-cumulativef) {
-  expected.success(threshold = threshold, scale.points = scale.points, densityf = densityf, cumulativef) +   (coverage.parameter * sum(sapply(scale.points[scale.points>=threshold])))
-
+# Utility Function
+utility <- function(threshold, scale.points, coverage.parameter, densityf, cumulativef){
+    return(expected.success(threshold = threshold, scale.points = scale.points, densityf = densityf,
+                    cumulativef) + (coverage.parameter * sum(sapply(scale.points[scale.points>=threshold],               function(x) {densityf(x)}))))
 }
 
 
-
+# Probability Threshold Function
 probability.threshold <- function(threshold, scale.points, lambda, coverage.parameter, densityf, cumulativef){
     
     som = 0
     for(i in scale.points){
-        som = som + exp(lambda * utility(threshold = i, scale.points = scale.points, coverage.parameter = coverage.parameter, densityf = densityf, cumulativef = cumulativef)) 
+        som = som + exp(lambda * utility(threshold = i, scale.points = scale.points,
+                                         coverage.parameter = coverage.parameter, densityf = densityf,
+                                         cumulativef = cumulativef)) 
     }
-    result = exp(lambda * utility(threshold = threshold, scale.points = scale.points, coverage.parameter = coverage.parameter, densityf = densityf, cumulativef = cumulativef)) / som
+    result = exp(lambda * utility(threshold = threshold,
+                                  scale.points = scale.points, coverage.parameter = coverage.parameter,
+                                  densityf = densityf, cumulativef = cumulativef)) / som
     
     return(result)
     
 }
 
+
+# Use Adjective Function
+use.adjective <- function(degree, scale.points, lambda, coverage.parameter, densityf, cumulativef) {
+
+    value = sum(sapply(scale.points[scale.points<=degree],
+                       function(x) {probability.threshold(threshold = x, scale.points = scale.points, 
+                                                          lambda = lambda, coverage.parameter = coverage.parameter,
+                                                          densityf = densityf, cumulativef = cumulativef)}))
+    return(value)
+
+}
+
+
+
+
 ```
+
+```{r}
+# Testing the Functions: 
+# probability.threshold is a probability, so if you sum up all values it
+# generates, the result should be 1
+round(sum(sapply(1:10, function(x) {probability.threshold(x, 1:10, 50, 0, function(x) {dnorm(x, 5, 1)}, 
+                                                          function(x) {pnorm(x, 5, 1)})}))) == 1
+
+# for narrow normal distribution, prob. threshold should be max just one
+# value above the average
+which(sapply(1:10, function(x) {probability.threshold(x, 1:10, 50, 0, function(x) {
+  dnorm(x, 5, 1)
+  }, function(x) {
+    pnorm(x, 5, 1)
+    })
+  }) == max(sapply(1:10, function(x) {
+    probability.threshold(x, 1:10, 50, 0, function(x) {
+      dnorm(x, 5, 1)
+      }, function(x) {
+        pnorm(x, 5, 1)
+        })
+    }))) == 6
+
+# use.adjective should be very unlikely on values 5 and smaller and very
+# likely afterwards
+round(sapply(1:10, function(x) {
+  use.adjective(x, 1:10, 50, 0, function(x) {
+    dnorm(x, 5, 1)
+    }, function(x) {
+      pnorm(x, 5, 1)
+      })
+  })[5], 3) == 0.005
+
+
+round(sapply(1:10, function(x) {
+  use.adjective(x, 1:10, 50, 0, function(x) {
+    dnorm(x, 5, 1)
+    }, function(x) {
+      pnorm(x, 5, 1)
+      })
+  })[6], 3) == 1
+
+```
+Given the distribution of height as described above (normal distribution, mean=180, st.d.=10), summarize the probability of using a threshold and how likely the speaker will use the adjective tall. For the
+summary, report at least two things. First, show two graphs: (i) what the probability of using threshold
+looks like on the scale 1 − 250cm; (ii) the graph of the function σ on the same scale. Second, you should
+state which degree point has the highest probability of being used as a threshold, and on which degree point
+it is most likely the speaker will use the adjective tall. If the two values differ or are the same, say in a few
+words why you think this is so. For the task, use free parameters λ = 50 and c = 0.
+
+
+```{r}
+# Question 1a 
+vec <- vector()
+for (threshold in 1:250) {
+  #print(threshold)
+  y<- probability.threshold(threshold , 1:250, 50, 0, function(x) {
+  dnorm(x, 180, 10)
+  }, function(x) {
+    pnorm(x, 180, 10)
+    })
+  vec <- append(vec, y)
+}
+df <- data.frame(x = c(1:250), y = vec)
+df
+
+g2 <- ggplot(df, aes(x = x, y = y))
+g2 <- g2 + geom_area(fill = "green", alpha = 0.4)
+g2 <- g2 + xlab("height") + ylab("P") + theme_gray(20)
+g2
+```
+
+```{r}
+# Question 1b
+vec <- vector()
+for (threshold in 1:250) {
+  #print(threshold)
+  y<-   use.adjective(threshold, 1:250, 50, 0, function(x) {
+    dnorm(x, 180, 10)
+    }, function(x) {
+      pnorm(x, 180, 10)
+      })
+  vec <- append(vec, y)
+}
+df2 <- data.frame(x = c(1:250), y = vec)
+df2
+
+g3 <- ggplot(df, aes(x = x, y = y))
+g3 <- g3 + geom_area(fill = "green", alpha = 0.4)
+g3 <- g3 + xlab("height") + ylab("P") + theme_gray(20)
+g3
+```
+
+
 
 
