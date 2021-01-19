@@ -222,5 +222,13 @@ for(i in scale.points){
 ```
 
 
+# Question 2: 
+
+```{r}
+# Create IQ normal distribution
+iqdist <- dnorm(seq(1,150), mean = 100, sd = 30 )
+plot(iqdist)
+
+```
 
 
